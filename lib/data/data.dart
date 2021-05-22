@@ -1,6 +1,6 @@
 import 'package:notepad/models/note.dart';
 
-List<Note> notes = [
+List<Note> myNotes = [
   Note(
     noteId: "1",
     title: "Huffman Compression",

@@ -46,8 +46,12 @@ class _EditPageState extends State<EditPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.grey,
+          ),
           onPressed: () {
             Navigator.pop(context);
             //TODO: save edited note back in the data base
@@ -55,7 +59,10 @@ class _EditPageState extends State<EditPage> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.delete),
+            icon: Icon(
+              Icons.delete,
+              color: Colors.grey,
+            ),
             onPressed: () {
               //TODO: delete current note from data base
             },
