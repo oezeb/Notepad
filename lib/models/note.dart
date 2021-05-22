@@ -5,11 +5,6 @@ class Note {
   final DateTime editDate;
   final DateTime alarm;
 
-  Note({
-    this.noteId,
-    this.title,
-    this.text,
-    this.editDate,
-    this.alarm,
-  });
+  Note({this.noteId, this.title, this.text, this.alarm, DateTime editDate})
+      : this.editDate = editDate ?? DateTime.now();
 }

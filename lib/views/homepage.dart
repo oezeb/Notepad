@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:notepad/data/data.dart';
 import 'package:notepad/models/note.dart';
+import 'package:notepad/views/editpage.dart';
 
 class HomePage extends StatefulWidget {
   final String title;
@@ -14,54 +15,53 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   _buildListItem(Note note) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: <Widget>[
-        Dismissible(
-          key: Key(note.noteId),
-          direction: DismissDirection.endToStart,
-          background: Container(
-            color: Colors.red,
-          ),
-          onDismissed: (direction) {
-            //TODO: delete note from database
-          },
-          child: ListTile(
-            title: Padding(
-              padding: EdgeInsets.all(10.0),
-              child: Text(
-                note.title,
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            subtitle: Text(
-              note.text,
+    return Dismissible(
+      key: Key(note.noteId),
+      direction: DismissDirection.endToStart,
+      onDismissed: (direction) {
+        //TODO: delete note from database
+      },
+      child: Container(
+        margin: EdgeInsets.all(10.0),
+        decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(10.0)),
+        child: ListTile(
+          title: Padding(
+            padding: EdgeInsets.all(10.0),
+            child: Text(
+              note.title,
+              maxLines: 1,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 24.0,
+                fontWeight: FontWeight.bold,
               ),
-              maxLines: 11,
               overflow: TextOverflow.ellipsis,
             ),
-            onTap: () {
-              //TODO: on tap edit note
-            },
-            onLongPress: () {
-              //TODO: on long press show options(delete,..)
-            },
           ),
-        ),
-        SizedBox(
-          height: 1,
-          child: Container(
-            color: Colors.blue,
+          subtitle: Text(
+            note.text,
+            style: TextStyle(
+              fontSize: 16,
+            ),
+            maxLines: 11,
+            overflow: TextOverflow.ellipsis,
           ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (BuildContext context) => EditPage(
+                  note: note,
+                ),
+              ),
+            );
+          },
+          onLongPress: () {
+            //TODO: on long press show options(delete,..)
+          },
         ),
-      ],
+      ),
     );
   }
 
@@ -82,16 +82,35 @@ class _HomePageState extends State<HomePage> {
           icon: Icon(
             Icons.menu,
           ),
-          onPressed: () {},
+          onPressed: () {
+            //TODO: show menu
+          },
         ),
         title: Text(
           widget.title,
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () {
+              //TODO: show search bar
+            },
+          ),
+        ],
       ),
       body: _buildList(),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (BuildContext context) => EditPage(
+                note: Note(),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
