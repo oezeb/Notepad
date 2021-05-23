@@ -5,73 +5,39 @@ import 'package:notepad/views/editpage.dart';
 import 'package:notepad/views/searchpage.dart';
 
 class HomePage extends StatefulWidget {
-  final List<String> _titleList;
-  final List<List<Note>> _notesList;
-  HomePage()
-      : _titleList = [
-          "Notepad",
-          "Favorites",
-        ],
-        _notesList = [
-          allNotes,
-          favNotes,
-        ];
-
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
   String _selectedNote;
-  int _index;
-  String _barTitle;
-  Widget _barLeading;
-  Color _barColor;
-  List<Widget> _barActions;
-  List<Widget> _bodyWidgetList;
-  List<Widget> _optionsActions;
-  List<Widget> _homeActions;
+  String _currPage;
+  Map<String, Map<String, Note>> _notesList;
 
-  List<Widget> _iconsList(Note note) {
-    Widget favorite = IconButton(
-      padding: EdgeInsets.zero,
-      icon: Icon(Icons.star_border),
-      onPressed: () {
-        setState(() {
-          note.favorite = !note.favorite;
-        });
-      },
-    );
-    Widget stiky = GestureDetector(
-      child: Image(
-        image: AssetImage('assets/images/pin_icon.png'),
-        height: 20,
-        width: 20,
-      ),
-      onTap: () {
-        setState(() {
-          note.sticky = !note.sticky;
-        });
-      },
-    );
-    List<Widget> L = [favorite, stiky];
-    if (note != null) {
-      if (note.favorite == false) L.remove(favorite);
-      if (note.sticky == false) L.remove(stiky);
-    }
-    return L;
-  }
-
-  _buildIcons(Note note) {
-    List<Widget> L = [];
-    for (var item in _iconsList(note)) {
-      L.add(Container(
-        margin: EdgeInsets.fromLTRB(5, 0, 5, 0),
-        height: 20,
-        width: 20,
-        child: item,
+  _headIcons(Note note) {
+    List<Widget> L = [
+      IconButton(
+        icon: note.favorite ? Icon(Icons.star) : Icon(Icons.star_border),
+        iconSize: 24,
+        onPressed: () {
+          allNotes[note.noteId].favorite = !allNotes[note.noteId].favorite;
+          setState(() {
+            _notesList = getNotesMap();
+          });
+        },
+      )
+    ];
+    if (_selectedNote == note.noteId)
+      L.add(IconButton(
+        icon: Icon(Icons.delete_outline),
+        iconSize: 24,
+        onPressed: () {
+          deleteNote(note.noteId);
+          setState(() {
+            _notesList = getNotesMap();
+          });
+        },
       ));
-    }
     return L;
   }
 
@@ -80,7 +46,10 @@ class _HomePageState extends State<HomePage> {
       key: Key(note.noteId),
       direction: DismissDirection.endToStart,
       onDismissed: (direction) {
-        //TODO: delete note from database
+        deleteNote(note.noteId);
+        setState(() {
+          _notesList = getNotesMap();
+        });
       },
       child: Container(
         margin: EdgeInsets.all(10.0),
@@ -109,7 +78,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ] +
-                  _buildIcons(note),
+                  _headIcons(note),
             ),
           ),
           subtitle: Text(
@@ -117,102 +86,80 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(
               fontSize: 16,
             ),
-            maxLines: 11,
+            maxLines: 10,
             overflow: TextOverflow.ellipsis,
           ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (BuildContext context) => EditPage(
-                  note: note,
+          onTap: () async {
+            if (int.parse(_selectedNote) == 0) {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (BuildContext context) => EditPage(note),
                 ),
-              ),
-            );
+              );
+              setState(() {
+                _notesList = getNotesMap();
+              });
+            } else {
+              setState(() {
+                _selectedNote = note.noteId;
+              });
+            }
           },
           onLongPress: () {
             setState(() {
               _selectedNote = note.noteId;
-              _barTitle = "";
-              _barLeading = IconButton(
-                  icon: Icon(Icons.arrow_back),
-                  onPressed: () {
-                    setState(() {
-                      _selectedNote = '0';
-                      _barTitle = "Notepad";
-                      _barLeading = null;
-                      _barActions = _homeActions;
-                      _barColor = Theme.of(context).appBarTheme.backgroundColor;
-                    });
-                  });
-              _barActions = _optionsActions;
-              _barColor = Colors.white;
             });
-            //TODO: on long press show options(delete,..)
           },
         ),
       ),
     );
   }
 
-  _buildList(List<Note> notes) {
-    return ListView.builder(
-        itemCount: allNotes.length,
-        itemBuilder: (context, index) {
-          return _buildListItem(notes[index]);
-        });
+  _buildList(Map<String, Note> notes) {
+    List<Widget> list = [];
+    notes.forEach((key, value) {
+      list.add(_buildListItem(value));
+    });
+    return ListView(
+      children: list,
+    );
   }
 
   @override
   void initState() {
     super.initState();
     _selectedNote = '0';
-    _index = 0;
-    _homeActions = [
-      IconButton(
-        icon: Icon(Icons.search),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (BuildContext context) => SearchPage(),
-            ),
-          );
-        },
-      ),
-    ];
-    _optionsActions = _iconsList(null) +
-        [
-          IconButton(
-            icon: Icon(Icons.delete_outline),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (BuildContext context) => SearchPage(),
-                ),
-              );
-            },
-          ),
-        ];
-    _barTitle = widget._titleList[_index];
-    _barLeading = null;
-    _barActions = _homeActions;
-    _barColor = null; //Theme.of(context).appBarTheme.backgroundColor;
-    _bodyWidgetList = [];
-    for (var notes in widget._notesList) {
-      _bodyWidgetList.add(_buildList(notes));
-    }
+    _currPage = "allNotes";
+    _notesList = getNotesMap();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: _barLeading,
-        title: Text(_barTitle),
-        actions: _barActions,
-        backgroundColor: _barColor,
+        title: Text(_currPage == 'allNotes' ? 'Notepad' : 'Favorites'),
+        actions: [
+          IconButton(
+            icon: _selectedNote == '0'
+                ? Icon(Icons.search)
+                : Icon(Icons.keyboard_return),
+            onPressed: () {
+              if (int.parse(_selectedNote) == 0) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (BuildContext context) => SearchPage(),
+                  ),
+                );
+              } else {
+                setState(() {
+                  _selectedNote = '0';
+                });
+              }
+            },
+          ),
+        ],
         iconTheme: IconThemeData(color: Colors.black),
       ),
       drawer: Drawer(
@@ -231,20 +178,22 @@ class _HomePageState extends State<HomePage> {
             ),
             ListTile(
               title: Text("All Notes"),
-              selected: _index == 0,
+              selected: _currPage == 'allNotes',
               onTap: () {
                 setState(() {
-                  _index = 0;
+                  _currPage = 'allNotes';
+                  _selectedNote = '0';
                 });
                 Navigator.pop(context);
               },
             ),
             ListTile(
               title: Text("Favorites"),
-              selected: _index == 1,
+              selected: _currPage == 'favorites',
               onTap: () {
                 setState(() {
-                  _index = 1;
+                  _currPage = 'favorites';
+                  _selectedNote = '0';
                 });
                 Navigator.pop(context);
               },
@@ -252,19 +201,21 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      body: _buildList(widget._notesList[_index]),
-      floatingActionButton: _index == 0
+      body: _buildList(_notesList[_currPage]),
+      floatingActionButton: _currPage == 'allNotes' && _selectedNote == '0'
           ? FloatingActionButton(
               child: Icon(Icons.add),
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (BuildContext context) => EditPage(
-                      note: Note(),
-                    ),
+                    builder: (BuildContext context) =>
+                        EditPage(Note(getNextId())),
                   ),
                 );
+                setState(() {
+                  _notesList = getNotesMap();
+                });
               },
             )
           : null,

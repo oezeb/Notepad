@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:notepad/data/data.dart';
 import 'package:notepad/models/note.dart';
+import 'package:notepad/views/homepage.dart';
 
 class EditPage extends StatefulWidget {
   final Note note;
-  EditPage({this.note});
+  final TextEditingController _titleController;
+  final TextEditingController _noteController;
+  final DateTime _editTime;
+
+  EditPage(Note note)
+      : this.note = note,
+        this._titleController = TextEditingController(text: note.title),
+        this._noteController = TextEditingController(text: note.text),
+        this._editTime = note.editDate;
 
   @override
   _EditPageState createState() => _EditPageState();
 }
 
 class _EditPageState extends State<EditPage> {
-  TextEditingController _titleController;
-  TextEditingController _noteController;
+  Note _note;
 
   _dateString(DateTime date) {
     String ans = "Edited   ";
@@ -35,11 +44,21 @@ class _EditPageState extends State<EditPage> {
     return ans;
   }
 
+  _saveNote() {
+    if (_note.title != "" || _note.text != "") {
+      if (_note.editDate == widget._editTime) {
+        setState(() {
+          _note.editDate = DateTime.now();
+        });
+        allNotes[_note.noteId] = _note;
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.note.title);
-    _noteController = TextEditingController(text: widget.note.text);
+    _note = widget.note;
   }
 
   @override
@@ -50,21 +69,38 @@ class _EditPageState extends State<EditPage> {
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: Colors.grey,
+            color: Colors.black,
           ),
           onPressed: () {
             Navigator.pop(context);
-            //TODO: save edited note back in the data base
           },
         ),
         actions: [
           IconButton(
+            icon: _note.favorite
+                ? Icon(
+                    Icons.star,
+                    color: Colors.black,
+                  )
+                : Icon(
+                    Icons.star_border,
+                    color: Colors.black,
+                  ),
+            onPressed: () {
+              setState(() {
+                _note.favorite = !_note.favorite;
+              });
+              _saveNote();
+            },
+          ),
+          IconButton(
             icon: Icon(
               Icons.delete,
-              color: Colors.grey,
+              color: Colors.black,
             ),
             onPressed: () {
-              //TODO: delete current note from data base
+              deleteNote(_note.noteId);
+              Navigator.pop(context);
             },
           ),
         ],
@@ -81,7 +117,11 @@ class _EditPageState extends State<EditPage> {
               style: TextStyle(fontSize: 25.0),
               minLines: 1,
               maxLines: 5,
-              controller: _titleController,
+              controller: widget._titleController,
+              onChanged: (title) {
+                _note.title = title;
+                _saveNote();
+              },
             ),
           ),
           Expanded(
@@ -94,7 +134,11 @@ class _EditPageState extends State<EditPage> {
                 ),
                 style: TextStyle(fontSize: 17.0),
                 maxLines: null,
-                controller: _noteController,
+                controller: widget._noteController,
+                onChanged: (text) {
+                  _note.text = text;
+                  _saveNote();
+                },
               ),
             ),
           ),

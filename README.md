@@ -1,17 +1,21 @@
 # notepad
 
-Home Page Design
+Home Page
 
-![home page](images/homepage.png)
+![home page](assets/images/home.png)
 
-Edit Note page Design
+longPress on a Note to see options
 
-![edit page](images/editpage.png)
+![options](assets/images/home_options.png)
+
+Edit Note
+
+![edit page](assets/images/edit.png)
 
 Sidebar Design
 
-![side bar](images/sidebar.png)
+![side bar](assets/images/sidebar.png)
 
-Search Page Design
+Search
 
-![search page](images/search.png)
+![search page](assets/images/search.png)
