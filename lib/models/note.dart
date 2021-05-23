@@ -1,19 +1,17 @@
 class Note {
   final String noteId;
-  final String title;
-  final String text;
-  final DateTime editDate;
-  final DateTime alarm;
-  final bool favorite;
-  final bool sticky;
+  String title;
+  String text;
+  DateTime editDate;
+  bool favorite;
+  bool sticky;
 
   Note(
-      {this.favorite,
-      this.sticky,
-      this.noteId,
-      this.title,
-      this.text,
-      this.alarm,
+      {this.favorite = false,
+      this.sticky = false,
+      this.noteId = "",
+      this.title = "",
+      this.text = "",
       DateTime editDate})
       : this.editDate = editDate ?? DateTime.now();
 }

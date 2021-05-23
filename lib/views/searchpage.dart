@@ -10,7 +10,7 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   TextEditingController _controller;
-  List<Note> _notes = myNotes;
+  List<Note> _notes = allNotes;
 
   @override
   void initState() {
