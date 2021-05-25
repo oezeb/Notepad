@@ -29,7 +29,7 @@ class Data {
     return file;
   }
 
-  get allNotes => _allNotes.values;
+  get allNotes => _allNotes;
 
   get nextId {
     while (_allNotes.containsKey(_nextId.toString()) || _nextId == 0) _nextId++;
@@ -58,34 +58,6 @@ class Data {
       str += value.toString();
     });
     return str;
-  }
-
-  static String mark(String text, String keyword) {
-    final bunks = text.split(RegExp(keyword));
-    String ans;
-    int i = 0;
-    if (text.indexOf(keyword) == 0)
-      ans = "**" + keyword;
-    else
-      ans = bunks[i++] + "**" + keyword;
-    while (i < bunks.length) {
-      ans += "**" + bunks[i++];
-    }
-    return ans;
-  }
-
-  Map<String, Note> search(String keyword) {
-    if (keyword == "") {
-      return {};
-    } else {
-      Map<String, Note> ans = {};
-      _allNotes.forEach((key, value) {
-        ans[key] = Note.copy(_allNotes[key]);
-        ans[key].title = mark(ans[key].title, keyword);
-        ans[key].text = mark(ans[key].text, keyword);
-      });
-      return ans;
-    }
   }
 
   Stream<Map<String, Map<String, Note>>> snapshots() async* {

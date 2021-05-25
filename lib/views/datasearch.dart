@@ -5,29 +5,48 @@ import 'package:notepad/views/editpage.dart';
 
 class DataSearch extends SearchDelegate<String> {
   BuildContext context;
+
   DataSearch(this.context);
+
   _span(String text) {
     return TextSpan(
       text: text,
       style: TextStyle(
         color: Colors.grey[700],
-        fontSize: text == query ? 24.0 : 16.0,
-        fontWeight: text == query ? FontWeight.bold : FontWeight.normal,
+        fontSize: text.toLowerCase() == query.toLowerCase() ? 24.0 : 16.0,
+        fontWeight: text.toLowerCase() == query.toLowerCase()
+            ? FontWeight.bold
+            : FontWeight.normal,
       ),
     );
   }
 
   _spanList(String text) {
-    final bunks = text.split(RegExp(query));
-    final len = bunks.length;
-    List<TextSpan> ans = [];
-    int i = 0;
-    if (bunks[0] == "")
-      i++;
-    else
-      ans.add(_span(bunks[i++]));
-    while (i < len) ans.addAll([_span(query), _span(bunks[i++])]);
-    return ans;
+    if (query == "") {
+      return <InlineSpan>[_span(text)];
+    } else {
+      var curr = -query.length;
+      var prev = 0;
+      List<TextSpan> ans = [];
+      while (true) {
+        curr = text
+            .toLowerCase()
+            .indexOf(query.toLowerCase(), curr + query.length);
+        if (curr < 0) {
+          ans.add(_span(text.substring(prev)));
+          break;
+        }
+
+        ans.addAll(
+          [
+            _span(text.substring(prev, curr)),
+            _span(text.substring(curr, curr + query.length)),
+          ],
+        );
+        prev = curr + query.length;
+      }
+      return ans;
+    }
   }
 
   _buildListItem(Note note) {
@@ -43,7 +62,6 @@ class DataSearch extends SearchDelegate<String> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             text: TextSpan(
-              text: "",
               children: _spanList(note.title),
             ),
           ),
@@ -52,7 +70,6 @@ class DataSearch extends SearchDelegate<String> {
           maxLines: 10,
           overflow: TextOverflow.ellipsis,
           text: TextSpan(
-            text: "",
             children: _spanList(note.text),
           ),
         ),
@@ -78,15 +95,10 @@ class DataSearch extends SearchDelegate<String> {
   }
 
   _result() {
-    final all = dataBase.allNotes;
+    final all = dataBase.allNotes.values;
     final list = all.where((element) {
-      final regexp = RegExp(".*" + query + ".*");
-      final bunks =
-          element.title.split(RegExp(" ")) + element.text.split(RegExp(" "));
-      for (var item in bunks) {
-        if (regexp.hasMatch(item)) return true;
-      }
-      return false;
+      final regexp = RegExp(".*" + query + ".*", caseSensitive: false);
+      return regexp.hasMatch(element.title) || regexp.hasMatch(element.text);
     }).toList();
     return _buildList(list);
   }
