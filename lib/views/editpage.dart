@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:notepad/data/data.dart';
 import 'package:notepad/models/note.dart';
-import 'package:notepad/views/homepage.dart';
 
 class EditPage extends StatefulWidget {
   final Note note;
@@ -44,14 +43,14 @@ class _EditPageState extends State<EditPage> {
     return ans;
   }
 
-  _saveNote() {
+  _saveNote() async {
     if (_note.title != "" || _note.text != "") {
       if (_note.editDate == widget._editTime) {
         setState(() {
           _note.editDate = DateTime.now();
         });
-        allNotes[_note.noteId] = _note;
       }
+      await dataBase.saveNote(_note);
     }
   }
 
@@ -98,8 +97,8 @@ class _EditPageState extends State<EditPage> {
               Icons.delete,
               color: Colors.black,
             ),
-            onPressed: () {
-              deleteNote(_note.noteId);
+            onPressed: () async {
+              await dataBase.deleteNote(_note.noteId);
               Navigator.pop(context);
             },
           ),
@@ -124,22 +123,20 @@ class _EditPageState extends State<EditPage> {
               },
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(10.0, 0, 10.0, 0),
-              child: TextField(
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  hintText: "Note",
-                ),
-                style: TextStyle(fontSize: 17.0),
-                maxLines: null,
-                controller: widget._noteController,
-                onChanged: (text) {
-                  _note.text = text;
-                  _saveNote();
-                },
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10.0, 0, 10.0, 0),
+            child: TextField(
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: "Note",
               ),
+              style: TextStyle(fontSize: 17.0),
+              maxLines: null,
+              controller: widget._noteController,
+              onChanged: (text) {
+                _note.text = text;
+                _saveNote();
+              },
             ),
           ),
         ],

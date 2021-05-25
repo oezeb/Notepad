@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:notepad/data/data.dart';
 import 'package:notepad/models/note.dart';
 import 'package:notepad/views/editpage.dart';
-import 'package:notepad/views/searchpage.dart';
+import 'package:notepad/views/datasearch.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -12,18 +12,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String _selectedNote;
   String _currPage;
-  Map<String, Map<String, Note>> _notesList;
 
   _headIcons(Note note) {
     List<Widget> L = [
       IconButton(
         icon: note.favorite ? Icon(Icons.star) : Icon(Icons.star_border),
         iconSize: 24,
-        onPressed: () {
-          allNotes[note.noteId].favorite = !allNotes[note.noteId].favorite;
-          setState(() {
-            _notesList = getNotesMap();
-          });
+        onPressed: () async {
+          note.favorite = !note.favorite;
+          await dataBase.saveNote(note);
         },
       )
     ];
@@ -31,11 +28,8 @@ class _HomePageState extends State<HomePage> {
       L.add(IconButton(
         icon: Icon(Icons.delete_outline),
         iconSize: 24,
-        onPressed: () {
-          deleteNote(note.noteId);
-          setState(() {
-            _notesList = getNotesMap();
-          });
+        onPressed: () async {
+          await dataBase.deleteNote(note.noteId);
         },
       ));
     return L;
@@ -45,11 +39,8 @@ class _HomePageState extends State<HomePage> {
     return Dismissible(
       key: Key(note.noteId),
       direction: DismissDirection.endToStart,
-      onDismissed: (direction) {
-        deleteNote(note.noteId);
-        setState(() {
-          _notesList = getNotesMap();
-        });
+      onDismissed: (direction) async {
+        await dataBase.deleteNote(note.noteId);
       },
       child: Container(
         margin: EdgeInsets.all(10.0),
@@ -89,17 +80,14 @@ class _HomePageState extends State<HomePage> {
             maxLines: 10,
             overflow: TextOverflow.ellipsis,
           ),
-          onTap: () async {
-            if (int.parse(_selectedNote) == 0) {
-              await Navigator.push(
+          onTap: () {
+            if (_selectedNote == '0') {
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (BuildContext context) => EditPage(note),
                 ),
               );
-              setState(() {
-                _notesList = getNotesMap();
-              });
             } else {
               setState(() {
                 _selectedNote = note.noteId;
@@ -131,7 +119,6 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _selectedNote = '0';
     _currPage = "allNotes";
-    _notesList = getNotesMap();
   }
 
   @override
@@ -145,13 +132,8 @@ class _HomePageState extends State<HomePage> {
                 ? Icon(Icons.search)
                 : Icon(Icons.keyboard_return),
             onPressed: () {
-              if (int.parse(_selectedNote) == 0) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (BuildContext context) => SearchPage(),
-                  ),
-                );
+              if (_selectedNote == '0') {
+                showSearch(context: context, delegate: DataSearch(context));
               } else {
                 setState(() {
                   _selectedNote = '0';
@@ -201,21 +183,37 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      body: _buildList(_notesList[_currPage]),
+      body: StreamBuilder<Map<String, Map<String, Note>>>(
+        stream: dataBase.snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData)
+            return Center(
+              child: Container(
+                margin: EdgeInsets.all(50),
+                child: LinearProgressIndicator(minHeight: 5),
+              ),
+            );
+          else
+            return Center(
+              child: Column(
+                children: [
+                  Expanded(child: _buildList(snapshot.data[_currPage]))
+                ],
+              ),
+            );
+        },
+      ),
       floatingActionButton: _currPage == 'allNotes' && _selectedNote == '0'
           ? FloatingActionButton(
               child: Icon(Icons.add),
-              onPressed: () async {
-                await Navigator.push(
+              onPressed: () {
+                Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (BuildContext context) =>
-                        EditPage(Note(getNextId())),
+                        EditPage(Note(dataBase.nextId)),
                   ),
                 );
-                setState(() {
-                  _notesList = getNotesMap();
-                });
               },
             )
           : null,
