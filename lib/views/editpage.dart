@@ -20,6 +20,8 @@ class EditPage extends StatefulWidget {
 
 class _EditPageState extends State<EditPage> {
   Note _note;
+  bool _saved;
+  bool _edited;
 
   _dateString(DateTime date) {
     String ans = "Edited   ";
@@ -45,12 +47,13 @@ class _EditPageState extends State<EditPage> {
 
   _saveNote() async {
     if (_note.title != "" || _note.text != "") {
-      if (_note.editDate == widget._editTime) {
-        setState(() {
-          _note.editDate = DateTime.now();
-        });
-      }
-      await dataBase.saveNote(_note);
+      setState(() {
+        if (_edited == true) _note.editDate = DateTime.now();
+      });
+      final res = await dataBase.saveNote(_note);
+      setState(() {
+        _saved = res;
+      });
     }
   }
 
@@ -58,6 +61,8 @@ class _EditPageState extends State<EditPage> {
   void initState() {
     super.initState();
     _note = widget.note;
+    _saved = true;
+    _edited = false;
   }
 
   @override
@@ -76,6 +81,14 @@ class _EditPageState extends State<EditPage> {
         ),
         actions: [
           IconButton(
+              icon: Icon(
+                Icons.save,
+                color: _saved == true ? Colors.black : Colors.red,
+              ),
+              onPressed: () async {
+                await _saveNote();
+              }),
+          IconButton(
             icon: _note.favorite
                 ? Icon(
                     Icons.star,
@@ -85,11 +98,11 @@ class _EditPageState extends State<EditPage> {
                     Icons.star_border,
                     color: Colors.black,
                   ),
-            onPressed: () {
+            onPressed: () async {
               setState(() {
                 _note.favorite = !_note.favorite;
               });
-              _saveNote();
+              await dataBase.save();
             },
           ),
           IconButton(
@@ -118,8 +131,13 @@ class _EditPageState extends State<EditPage> {
               maxLines: 5,
               controller: widget._titleController,
               onChanged: (title) {
-                _note.title = title;
-                _saveNote();
+                setState(() {
+                  if (_note.title != title) {
+                    _saved = false;
+                    _edited = true;
+                    _note.title = title;
+                  }
+                });
               },
             ),
           ),
@@ -134,8 +152,13 @@ class _EditPageState extends State<EditPage> {
               maxLines: null,
               controller: widget._noteController,
               onChanged: (text) {
-                _note.text = text;
-                _saveNote();
+                setState(() {
+                  if (_note.text != text) {
+                    _saved = false;
+                    _edited = true;
+                    _note.text = text;
+                  }
+                });
               },
             ),
           ),

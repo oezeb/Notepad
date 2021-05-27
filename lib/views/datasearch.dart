@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:notepad/data/data.dart';
 import 'package:notepad/models/note.dart';
 import 'package:notepad/views/editpage.dart';
 
 class DataSearch extends SearchDelegate<String> {
   BuildContext context;
+  final Map<String, Note> notes;
 
-  DataSearch(this.context);
+  DataSearch({this.context, this.notes});
 
   _span(String text) {
     return TextSpan(
@@ -95,8 +95,7 @@ class DataSearch extends SearchDelegate<String> {
   }
 
   _result() {
-    final all = dataBase.allNotes.values;
-    final list = all.where((element) {
+    final list = notes.values.where((element) {
       final regexp = RegExp(".*" + query + ".*", caseSensitive: false);
       return regexp.hasMatch(element.title) || regexp.hasMatch(element.text);
     }).toList();

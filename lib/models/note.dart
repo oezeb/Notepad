@@ -12,13 +12,14 @@ class Note {
       DateTime editDate})
       : this.editDate = editDate ?? DateTime.now();
 
-  static Note copy(Note other) {
-    Note note = Note(other.noteId,
-        title: other.title,
-        text: other.title,
-        favorite: other.favorite,
-        editDate: other.editDate);
-    return note;
+  factory Note.copy(Note other) {
+    return Note(
+      other.noteId,
+      title: other.title,
+      text: other.text,
+      favorite: other.favorite,
+      editDate: other.editDate,
+    );
   }
 
   static Map<String, Note> parseNotes(String text) {

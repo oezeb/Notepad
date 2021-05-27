@@ -29,30 +29,36 @@ class Data {
     return file;
   }
 
-  get allNotes => _allNotes;
-
   get nextId {
     while (_allNotes.containsKey(_nextId.toString()) || _nextId == 0) _nextId++;
     return _nextId.toString();
   }
 
+  refresh() async {
+    final file = await _localFile;
+    _fileContent = await file.readAsString();
+    _allNotes = Note.parseNotes(_fileContent);
+  }
+
   deleteNote(String noteId) async {
     _allNotes.remove(noteId);
-    return saveAll(_allNotes);
+    return save();
   }
 
-  saveNote(Note note) async {
+  saveNote(Note note) {
     _allNotes[note.noteId] = note;
-    return saveAll(_allNotes);
+    return save();
   }
 
-  saveAll(Map<String, Note> all) async {
-    final file = await _localFile;
-    await file.open(mode: FileMode.write);
-    return file.writeAsString(getString(all));
+  save() async {
+    final contents = getString(_allNotes);
+    File file = await _localFile;
+    file = await file.writeAsString(contents);
+    final newContents = await file.readAsString();
+    return contents == newContents;
   }
 
-  getString(Map<String, Note> all) {
+  String getString(Map<String, Note> all) {
     String str = "";
     all.forEach((key, value) {
       str += value.toString();
@@ -60,22 +66,36 @@ class Data {
     return str;
   }
 
-  Stream<Map<String, Map<String, Note>>> snapshots() async* {
+  Stream<String> fstream() async* {
     final file = await _localFile;
     while (true) {
       final contents = await file.readAsString();
       if (contents == "" || contents != _fileContent) {
         _fileContent = contents;
-        _allNotes = Note.parseNotes(contents);
-        Map<String, Note> fav = {};
-        _allNotes.forEach((key, value) {
-          if (value.favorite) fav.addAll({key: value});
-        });
-        yield {
-          "allNotes": _allNotes,
-          "favorites": fav,
-        };
+        yield _fileContent;
       }
+    }
+  }
+
+  Stream<Map<String, Note>> allNotes() async* {
+    final stream = fstream();
+    await for (var str in stream) {
+      _allNotes = Note.parseNotes(str);
+      yield _allNotes;
+    }
+  }
+
+  Stream<Map<String, Map<String, Note>>> snapshots() async* {
+    final stream = allNotes();
+    await for (var notes in stream) {
+      Map<String, Note> fav = {};
+      notes.forEach((key, value) {
+        if (value.favorite) fav[key] = value;
+      });
+      yield {
+        "allNotes": _allNotes,
+        "favorites": fav,
+      };
     }
   }
 }

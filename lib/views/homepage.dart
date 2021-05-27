@@ -12,6 +12,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String _selectedNote;
   String _currPage;
+  Map<String, Map<String, Note>> _allAndFav;
 
   _headIcons(Note note) {
     List<Widget> L = [
@@ -20,7 +21,7 @@ class _HomePageState extends State<HomePage> {
         iconSize: 24,
         onPressed: () async {
           note.favorite = !note.favorite;
-          await dataBase.saveNote(note);
+          await dataBase.save();
         },
       )
     ];
@@ -80,12 +81,12 @@ class _HomePageState extends State<HomePage> {
             maxLines: 10,
             overflow: TextOverflow.ellipsis,
           ),
-          onTap: () {
+          onTap: () async {
             if (_selectedNote == '0') {
-              Navigator.push(
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (BuildContext context) => EditPage(note),
+                  builder: (BuildContext context) => EditPage(Note.copy(note)),
                 ),
               );
             } else {
@@ -119,6 +120,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _selectedNote = '0';
     _currPage = "allNotes";
+    _allAndFav = {};
   }
 
   @override
@@ -133,7 +135,12 @@ class _HomePageState extends State<HomePage> {
                 : Icon(Icons.keyboard_return),
             onPressed: () {
               if (_selectedNote == '0') {
-                showSearch(context: context, delegate: DataSearch(context));
+                showSearch(
+                    context: context,
+                    delegate: DataSearch(
+                      context: context,
+                      notes: _allAndFav[_currPage],
+                    ));
               } else {
                 setState(() {
                   _selectedNote = '0';
@@ -186,6 +193,7 @@ class _HomePageState extends State<HomePage> {
       body: StreamBuilder<Map<String, Map<String, Note>>>(
         stream: dataBase.snapshots(),
         builder: (context, snapshot) {
+          _allAndFav = snapshot.data;
           if (!snapshot.hasData)
             return Center(
               child: Container(
