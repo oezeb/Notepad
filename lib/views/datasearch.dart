@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:notepad/models/note.dart';
-import 'package:notepad/views/editpage.dart';
+
+import '../models/note.dart';
+import '../views/editpage.dart';
 
 class DataSearch extends SearchDelegate<String> {
   BuildContext context;
@@ -8,6 +9,7 @@ class DataSearch extends SearchDelegate<String> {
 
   DataSearch({this.context, this.notes});
 
+  // Use span to highlight matched element
   _span(String text) {
     return TextSpan(
       text: text,
@@ -49,7 +51,7 @@ class DataSearch extends SearchDelegate<String> {
     }
   }
 
-  _buildListItem(Note note) {
+  _buildListItem(String key) {
     return Container(
       margin: EdgeInsets.all(10.0),
       decoration: BoxDecoration(
@@ -62,7 +64,7 @@ class DataSearch extends SearchDelegate<String> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             text: TextSpan(
-              children: _spanList(note.title),
+              children: _spanList(notes[key].title),
             ),
           ),
         ),
@@ -70,14 +72,17 @@ class DataSearch extends SearchDelegate<String> {
           maxLines: 10,
           overflow: TextOverflow.ellipsis,
           text: TextSpan(
-            children: _spanList(note.text),
+            children: _spanList(notes[key].text),
           ),
         ),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (BuildContext context) => EditPage(note),
+              builder: (BuildContext context) => EditPage(
+                noteId: key,
+                note: notes[key],
+              ),
             ),
           );
         },
@@ -85,19 +90,20 @@ class DataSearch extends SearchDelegate<String> {
     );
   }
 
-  _buildList(var notes) {
+  _buildList(List<String> notesKeys) {
     return ListView.builder(
       itemBuilder: (context, index) {
-        return _buildListItem(notes[index]);
+        return _buildListItem(notesKeys[index]);
       },
-      itemCount: notes.length,
+      itemCount: notesKeys.length,
     );
   }
 
   _result() {
-    final list = notes.values.where((element) {
+    final list = notes.keys.where((key) {
       final regexp = RegExp(".*" + query + ".*", caseSensitive: false);
-      return regexp.hasMatch(element.title) || regexp.hasMatch(element.text);
+      return regexp.hasMatch(notes[key].title) ||
+          regexp.hasMatch(notes[key].text);
     }).toList();
     return _buildList(list);
   }

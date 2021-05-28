@@ -1,68 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:notepad/data/data.dart';
-import 'package:notepad/models/note.dart';
+
+import '../views_models/edit_view_model.dart';
+import '../utils/date.dart';
 
 class EditPage extends StatefulWidget {
-  final Note note;
-  final TextEditingController _titleController;
-  final TextEditingController _noteController;
-  final DateTime _editTime;
-
-  EditPage(Note note)
-      : this.note = note,
-        this._titleController = TextEditingController(text: note.title),
-        this._noteController = TextEditingController(text: note.text),
-        this._editTime = note.editDate;
-
+  final String noteId;
+  final note;
+  EditPage({this.noteId, this.note});
   @override
   _EditPageState createState() => _EditPageState();
 }
 
 class _EditPageState extends State<EditPage> {
-  Note _note;
   bool _saved;
-  bool _edited;
-
-  _dateString(DateTime date) {
-    String ans = "Edited   ";
-    DateTime now = DateTime.now();
-    //this year
-    if (now.year == date.year) {
-      //Today
-      if (now.month * 10 + now.day == date.month * 10 + date.day) {
-        ans += (date.hour % 12).toString() + " : " + date.minute.toString();
-        ans += (date.hour <= 12) ? " AM" : " PM";
-      } else {
-        ans += getMonth(date.month).toString() + " " + date.day.toString();
-      }
-    } else {
-      ans += date.year.toString() +
-          "/" +
-          date.month.toString() +
-          "/" +
-          date.day.toString();
-    }
-    return ans;
-  }
-
-  _saveNote() async {
-    if (_note.title != "" || _note.text != "") {
-      setState(() {
-        if (_edited == true) _note.editDate = DateTime.now();
-      });
-      final res = await dataBase.saveNote(_note);
-      setState(() {
-        _saved = res;
-      });
-    }
-  }
+  TextEditingController _titleCtrl;
+  TextEditingController _textCtrl;
+  EditVM _editVM;
 
   @override
   void initState() {
     super.initState();
-    _note = widget.note;
+    _editVM = EditVM(key: widget.noteId, note: widget.note);
     _saved = true;
-    _edited = false;
+    _titleCtrl = TextEditingController(text: _editVM.note.title);
+    _textCtrl = TextEditingController(text: _editVM.note.text);
   }
 
   @override
@@ -75,7 +36,8 @@ class _EditPageState extends State<EditPage> {
             Icons.arrow_back,
             color: Colors.black,
           ),
-          onPressed: () {
+          onPressed: () async {
+            await _editVM.saveNote();
             Navigator.pop(context);
           },
         ),
@@ -86,10 +48,13 @@ class _EditPageState extends State<EditPage> {
                 color: _saved == true ? Colors.black : Colors.red,
               ),
               onPressed: () async {
-                await _saveNote();
+                bool res = await _editVM.saveNote();
+                setState(() {
+                  _saved = res;
+                });
               }),
           IconButton(
-            icon: _note.favorite
+            icon: _editVM.note.favorite
                 ? Icon(
                     Icons.star,
                     color: Colors.black,
@@ -100,9 +65,9 @@ class _EditPageState extends State<EditPage> {
                   ),
             onPressed: () async {
               setState(() {
-                _note.favorite = !_note.favorite;
+                _editVM.note.favorite = !_editVM.note.favorite;
               });
-              await dataBase.save();
+              await _editVM.saveNote();
             },
           ),
           IconButton(
@@ -111,7 +76,7 @@ class _EditPageState extends State<EditPage> {
               color: Colors.black,
             ),
             onPressed: () async {
-              await dataBase.deleteNote(_note.noteId);
+              await _editVM.delete();
               Navigator.pop(context);
             },
           ),
@@ -129,13 +94,12 @@ class _EditPageState extends State<EditPage> {
               style: TextStyle(fontSize: 25.0),
               minLines: 1,
               maxLines: 5,
-              controller: widget._titleController,
+              controller: _titleCtrl,
               onChanged: (title) {
                 setState(() {
-                  if (_note.title != title) {
+                  if (_editVM.note.title != title) {
                     _saved = false;
-                    _edited = true;
-                    _note.title = title;
+                    _editVM.note.title = title;
                   }
                 });
               },
@@ -150,13 +114,12 @@ class _EditPageState extends State<EditPage> {
               ),
               style: TextStyle(fontSize: 17.0),
               maxLines: null,
-              controller: widget._noteController,
+              controller: _textCtrl,
               onChanged: (text) {
                 setState(() {
-                  if (_note.text != text) {
+                  if (_editVM.note.text != text) {
                     _saved = false;
-                    _edited = true;
-                    _note.text = text;
+                    _editVM.note.text = text;
                   }
                 });
               },
@@ -168,7 +131,7 @@ class _EditPageState extends State<EditPage> {
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Text(
-            _dateString(widget.note.editDate),
+            Date.getString(widget.note.editDate),
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 15),
           ),
@@ -176,34 +139,4 @@ class _EditPageState extends State<EditPage> {
       ),
     );
   }
-}
-
-String getMonth(int month) {
-  switch (month) {
-    case 1:
-      return "Jan";
-    case 2:
-      return "Feb";
-    case 3:
-      return "Mar";
-    case 4:
-      return "Apr";
-    case 5:
-      return "May";
-    case 6:
-      return "Jun";
-    case 7:
-      return "Jul";
-    case 8:
-      return "Aug";
-    case 9:
-      return "Sep";
-    case 10:
-      return "Oct";
-    case 11:
-      return "Nov";
-    case 12:
-      return "Dec";
-  }
-  return "";
 }

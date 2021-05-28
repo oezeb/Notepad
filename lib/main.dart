@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:notepad/views/homepage.dart';
 
+import 'utils/constants.dart';
+import 'utils/note_data_base.dart';
+import 'views/homepage.dart';
+
+NoteDataBase noteDataBase;
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    noteDataBase = NoteDataBase(fileName: Constants.FILE_NAME);
     return MaterialApp(
-      title: 'Notepad',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: HomePage(),
+      title: Constants.APP_NAME,
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: HomePage(title: Constants.APP_NAME),
     );
   }
 }

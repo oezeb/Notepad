@@ -1,57 +1,57 @@
+import 'dart:convert';
+
 class Note {
-  final String noteId;
   String title;
   String text;
   bool favorite;
   DateTime editDate;
 
-  Note(this.noteId,
-      {this.title = "",
-      this.text = "",
-      this.favorite = false,
-      DateTime editDate})
-      : this.editDate = editDate ?? DateTime.now();
+  Note({
+    this.title = '',
+    this.text = '',
+    this.favorite = false,
+    DateTime editDate,
+  }) : this.editDate = editDate ?? DateTime.now();
 
-  factory Note.copy(Note other) {
-    return Note(
-      other.noteId,
-      title: other.title,
-      text: other.text,
-      favorite: other.favorite,
-      editDate: other.editDate,
-    );
+  Note.fromJson(Map<String, dynamic> json)
+      : title = json['title'],
+        text = json['text'],
+        favorite = json['favorite'],
+        editDate = DateTime.parse(json['editDate']);
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'text': text,
+      'favorite': favorite,
+      'editDate': editDate.toString(),
+    };
   }
 
-  static Map<String, Note> parseNotes(String text) {
-    List<String> bunks = text.split(RegExp("<|><|>"));
-    Map<String, Note> map = {};
-    String currId = "";
-    for (int i = 1; i + 1 < bunks.length; i += 2) {
-      switch (bunks[i]) {
-        case "noteId":
-          currId = bunks[i + 1];
-          map[currId] = Note(currId);
-          break;
-        case "title":
-          map[currId].title = bunks[i + 1];
-          break;
-        case "text":
-          map[currId].text = bunks[i + 1];
-          break;
-        case "favorite":
-          map[currId].favorite = bunks[i + 1] == "true";
-          break;
-        case "editDate":
-          map[currId].editDate = DateTime.parse(bunks[i + 1]);
-          break;
-        default:
+  isEmpty() => title == '' && text == '';
+
+  static Note fromString(String source) {
+    try {
+      // trying to use the built in function to parse Json
+      return Note.fromJson(json.decode(source));
+    } catch (err) {
+      if (source == null || source == '') {
+        // it's empty
+        return null;
+      } else {
+        // trying to repair the string in order to get a least one Note out of it
+        // first try to add brackets if ther isn't
+        bool hasLeftBracket = source[0] == '{';
+        bool hasRightBracket = source[source.length - 1] == '}';
+        if (!hasRightBracket || !hasRightBracket) {
+          if (!hasLeftBracket) source = '{' + source;
+          if (!hasRightBracket) source += '}';
+          return fromString(source);
+        } else {
+          // if it still doesn't work find maybe inside the given string a substring enclose with brakets
+          return fromString(RegExp('{.*}').stringMatch(source.substring(1)));
+        }
       }
     }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return "<noteId><$noteId><title><$title><text><$text><favorite><$favorite><editDate><$editDate>";
   }
 }
