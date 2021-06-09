@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../utils/constants.dart';
 import '../views_models/home_view_model.dart';
-import '../models/notemap.dart';
 import '../views/datasearch.dart';
 import '../views/editpage.dart';
+import '../views_models/edit_view_model.dart';
 import '../models/note.dart';
-import '../main.dart';
 
 class HomePage extends StatefulWidget {
   final title;
@@ -21,60 +21,57 @@ class _HomePageState extends State<HomePage> {
   String _selectedNote;
   Pages _currPage;
   HomeVM _homeVM;
+  List<Note> _notes;
 
-  _showEditPage(String key) {
-    Note note = _homeVM.getNote(key);
-    if (key == null) key = '0';
-    Navigator.push(
+  _showEditPage(Note note) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (BuildContext context) => EditPage(
-          noteId: key,
-          note: note,
+        builder: (BuildContext context) => ChangeNotifierProvider(
+          create: (context) => EditVM(note),
+          child: EditPage(),
         ),
       ),
     );
+    await _homeVM.reload();
   }
 
-  _headIcons(String key) {
+  _headIcons(Note note) {
     List<Widget> L = [
       IconButton(
-        icon: _homeVM.getNote(key).favorite
-            ? Icon(Icons.star)
-            : Icon(Icons.star_border),
+        icon: note.favorite ? Icon(Icons.star) : Icon(Icons.star_border),
         iconSize: 24,
         onPressed: () async {
-          await _homeVM.switchFav(key);
+          await _homeVM.switchFav(note.id);
         },
       )
     ];
-    if (_selectedNote == key)
+    if (_selectedNote == note.id)
       L.add(IconButton(
         icon: Icon(Icons.delete_outline),
         iconSize: 24,
         onPressed: () async {
-          await _homeVM.deleteNote(key);
+          await _homeVM.deleteNote(note.id);
         },
       ));
     return L;
   }
 
-  _buildListItem(String key) {
-    Note note = _homeVM.getNote(key);
+  _buildListItem(Note note) {
     return Dismissible(
-      key: Key(key),
+      key: Key(note.id),
       direction: DismissDirection.endToStart,
       onDismissed: (direction) async {
-        await _homeVM.deleteNote(key);
+        await _homeVM.deleteNote(note.id);
       },
       child: Container(
         margin: EdgeInsets.all(10.0),
         decoration: BoxDecoration(
-          color: _selectedNote == key
+          color: _selectedNote == note.id
               ? Colors.grey
               : Theme.of(context).scaffoldBackgroundColor,
           border: Border.all(
-            color: _selectedNote == key ? Colors.black : Colors.grey,
+            color: _selectedNote == note.id ? Colors.black : Colors.grey,
           ),
           borderRadius: BorderRadius.circular(10.0),
         ),
@@ -95,7 +92,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ] +
-                  _headIcons(key),
+                  _headIcons(note),
             ),
           ),
           subtitle: Text(
@@ -106,18 +103,18 @@ class _HomePageState extends State<HomePage> {
             maxLines: 10,
             overflow: TextOverflow.ellipsis,
           ),
-          onTap: () {
+          onTap: () async {
             if (_selectedNote == '0') {
-              _showEditPage(key);
+              await _showEditPage(note);
             } else {
               setState(() {
-                _selectedNote = key;
+                _selectedNote = note.id;
               });
             }
           },
           onLongPress: () {
             setState(() {
-              _selectedNote = key;
+              _selectedNote = note.id;
             });
           },
         ),
@@ -125,12 +122,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  _buildListView(List<String> notesKeys) {
+  _buildListView() {
     return ListView.builder(
       itemBuilder: (context, index) {
-        return _buildListItem(notesKeys[index]);
+        return _buildListItem(_notes[index]);
       },
-      itemCount: notesKeys.length,
+      itemCount: _notes.length,
     );
   }
 
@@ -139,11 +136,13 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _selectedNote = '0';
     _currPage = Pages.ALL_NOTES;
-    _homeVM = HomeVM();
+    _notes = [];
   }
 
   @override
   Widget build(BuildContext context) {
+    _homeVM = Provider.of<HomeVM>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_currPage == Pages.ALL_NOTES ? widget.title : 'Favorites'),
@@ -154,13 +153,10 @@ class _HomePageState extends State<HomePage> {
                 : Icon(Icons.keyboard_return),
             onPressed: () async {
               if (_selectedNote == '0') {
-                final notes = _homeVM.notesToDisplay(Pages.SEARCH);
+                final notes = await _homeVM.notesToDisplay(Pages.ALL_NOTES);
                 showSearch(
                   context: context,
-                  delegate: DataSearch(
-                    context: context,
-                    notes: notes,
-                  ),
+                  delegate: DataSearch(context),
                 );
               } else {
                 setState(() {
@@ -211,38 +207,27 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      body: StreamBuilder<NoteMap>(
-        stream: noteDataBase.snapshots(),
+      body: FutureBuilder(
+        future: _homeVM.notesToDisplay(_currPage),
         builder: (context, snapshot) {
-          if (!snapshot.hasData)
-            return Center(
-              child: Container(
-                margin: EdgeInsets.all(50),
-                child: LinearProgressIndicator(minHeight: 5),
-              ),
-            );
-          else {
-            _homeVM.noteMap = snapshot.data.data;
-            return Center(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: _buildListView(
-                      _homeVM.notesToDisplay(_currPage),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
+          if (snapshot.connectionState == ConnectionState.done)
+            _notes = snapshot.data;
+          return Center(
+            child: Column(
+              children: [
+                Expanded(
+                  child: _buildListView(),
+                ),
+              ],
+            ),
+          );
         },
       ),
       floatingActionButton: _currPage == Pages.ALL_NOTES && _selectedNote == '0'
           ? FloatingActionButton(
               child: Icon(Icons.add),
               onPressed: () async {
-                String key = await _homeVM.nextKey();
-                _showEditPage(key);
+                await _showEditPage(Note());
               },
             )
           : null,

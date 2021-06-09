@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:notepad/views_models/edit_view_model.dart';
+import 'package:provider/provider.dart';
+import 'package:sqflite/sqflite.dart';
 
+import '../main.dart';
 import '../models/note.dart';
 import '../views/editpage.dart';
 
 class DataSearch extends SearchDelegate<String> {
-  BuildContext context;
-  final Map<String, Note> notes;
+  final BuildContext context;
 
-  DataSearch({this.context, this.notes});
+  DataSearch(this.context);
 
   // Use span to highlight matched element
   _span(String text) {
@@ -51,7 +54,7 @@ class DataSearch extends SearchDelegate<String> {
     }
   }
 
-  _buildListItem(String key) {
+  _buildListItem(Note note) {
     return Container(
       margin: EdgeInsets.all(10.0),
       decoration: BoxDecoration(
@@ -64,7 +67,7 @@ class DataSearch extends SearchDelegate<String> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             text: TextSpan(
-              children: _spanList(notes[key].title),
+              children: _spanList(note.title),
             ),
           ),
         ),
@@ -72,16 +75,16 @@ class DataSearch extends SearchDelegate<String> {
           maxLines: 10,
           overflow: TextOverflow.ellipsis,
           text: TextSpan(
-            children: _spanList(notes[key].text),
+            children: _spanList(note.text),
           ),
         ),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (BuildContext context) => EditPage(
-                noteId: key,
-                note: notes[key],
+              builder: (BuildContext context) => ChangeNotifierProvider(
+                create: (context) => EditVM(note),
+                child: EditPage(),
               ),
             ),
           );
@@ -90,22 +93,23 @@ class DataSearch extends SearchDelegate<String> {
     );
   }
 
-  _buildList(List<String> notesKeys) {
+  _buildList(List<Note> notes) {
     return ListView.builder(
       itemBuilder: (context, index) {
-        return _buildListItem(notesKeys[index]);
+        return _buildListItem(notes.elementAt(index));
       },
-      itemCount: notesKeys.length,
+      itemCount: notes.length,
     );
   }
 
-  _result() {
-    final list = notes.keys.where((key) {
-      final regexp = RegExp(".*" + query + ".*", caseSensitive: false);
-      return regexp.hasMatch(notes[key].title) ||
-          regexp.hasMatch(notes[key].text);
-    }).toList();
-    return _buildList(list);
+  Future<List<Note>> _result() async {
+    Map<String, Note> map = await db.query();
+    return map.values.where(
+      (note) {
+        final regexp = RegExp(".*" + query + ".*", caseSensitive: false);
+        return regexp.hasMatch(note.title) || regexp.hasMatch(note.text);
+      },
+    ).toList();
   }
 
   @override
@@ -133,11 +137,39 @@ class DataSearch extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return _result();
+    return FutureBuilder(
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return _buildList(snapshot.data);
+        } else {
+          return Center(
+            child: Container(
+              margin: EdgeInsets.all(50),
+              child: LinearProgressIndicator(minHeight: 5),
+            ),
+          );
+        }
+      },
+      future: _result(),
+    );
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return _result();
+    return FutureBuilder(
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return _buildList(snapshot.data);
+        } else {
+          return Center(
+            child: Container(
+              margin: EdgeInsets.all(50),
+              child: LinearProgressIndicator(minHeight: 5),
+            ),
+          );
+        }
+      },
+      future: _result(),
+    );
   }
 }
