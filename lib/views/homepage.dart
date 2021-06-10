@@ -54,6 +54,7 @@ class HomePage extends StatelessWidget {
         child: Icon(Icons.add),
         onPressed: () async {
           await NotesListView.showEditPage(context, Note());
+          await _homeVM.reload();
         },
       ),
     );
