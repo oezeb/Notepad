@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:notepad/views_models/edit_view_model.dart';
 import 'package:provider/provider.dart';
-import 'package:sqflite/sqflite.dart';
 
 import '../main.dart';
 import '../models/note.dart';
 import '../views/editpage.dart';
+import '../views_models/edit_view_model.dart';
 
 class DataSearch extends SearchDelegate<String> {
   final BuildContext context;

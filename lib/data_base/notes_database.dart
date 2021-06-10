@@ -2,13 +2,12 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/note.dart';
-import '../utils/constants.dart';
 
 class NotesDatabase {
   final Uuid _uuid = Uuid();
   final _database;
 
-  NotesDatabase({String fileName = Constants.FILE_NAME})
+  NotesDatabase({String fileName})
       : _database = openDatabase(
           fileName,
           onCreate: (db, version) {

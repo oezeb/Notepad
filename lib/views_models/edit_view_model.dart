@@ -1,16 +1,16 @@
 import 'package:flutter/cupertino.dart';
-import 'package:notepad/utils/date.dart';
 
+import '../utils/date.dart';
 import '../models/note.dart';
 import '../main.dart';
 
 class EditVM extends ChangeNotifier {
   Note _note;
-  bool _saved;
+  bool updated;
 
   EditVM(Note note)
       : _note = note,
-        _saved = note != null && note.id != null;
+        updated = false;
 
   bool isFavorite() => _note.favorite;
 
@@ -39,11 +39,20 @@ class EditVM extends ChangeNotifier {
   }
 
   update() async {
-    if (_saved) {
-      await db.update(_note);
-    } else {
+    // delete from database if empty note
+    if (_note.title == '' && _note.text == '') {
+      await db.delete(_note.id);
+      return;
+    }
+    // update data
+    if (updated == false) {
+      _note.editDate = DateTime.now();
+      updated = true;
+    }
+    int num = await db.update(_note);
+    // num == 0 means note doesn't exist in the database
+    if (num == 0) {
       await db.insert(_note);
-      _saved = true;
     }
   }
 

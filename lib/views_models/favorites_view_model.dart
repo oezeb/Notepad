@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import '../main.dart';
 import '../models/note.dart';
 
-class HomeVM extends ChangeNotifier {
+class FavoritesVM extends ChangeNotifier {
   Map<String, Note> noteMap;
 
   reload() async {
@@ -18,7 +18,7 @@ class HomeVM extends ChangeNotifier {
 
   Future<List<Note>> query() async {
     if (noteMap == null) noteMap = await db.query();
-    return noteMap.values.toList();
+    return noteMap.values.where((note) => noteMap[note.id].favorite).toList();
   }
 
   update(String id) async {

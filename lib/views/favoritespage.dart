@@ -4,17 +4,17 @@ import 'package:provider/provider.dart';
 import '../widgets.dart/appdrawer.dart';
 import '../models/note.dart';
 import '../views/datasearch.dart';
-import '../views_models/home_view_model.dart';
+import '../views_models/favorites_view_model.dart';
 import '../widgets.dart/noteslistview.dart';
 
-class HomePage extends StatelessWidget {
+class FavoritesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final HomeVM _homeVM = Provider.of<HomeVM>(context);
+    final FavoritesVM _favoritesVM = Provider.of<FavoritesVM>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Notepad'),
+        title: Text('Favorites'),
         actions: [
           IconButton(
             icon: Icon(Icons.search),
@@ -23,15 +23,15 @@ class HomePage extends StatelessWidget {
                 context: context,
                 delegate: DataSearch(context),
               );
-              _homeVM.reload();
+              _favoritesVM.reload();
             },
           ),
         ],
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      drawer: AppDrawer(currPage: Pages.ALL_NOTES),
+      drawer: AppDrawer(currPage: Pages.FAVORITES),
       body: FutureBuilder(
-        future: _homeVM.query(),
+        future: _favoritesVM.query(),
         builder: (context, snapshot) {
           List<Note> notes = [];
           if (snapshot.connectionState == ConnectionState.done)
@@ -42,18 +42,12 @@ class HomePage extends StatelessWidget {
                 Expanded(
                   child: NotesListView(
                     notes: notes,
-                    parentVM: _homeVM,
+                    parentVM: _favoritesVM,
                   ),
                 ),
               ],
             ),
           );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
-        onPressed: () async {
-          await NotesListView.showEditPage(context, Note());
         },
       ),
     );
