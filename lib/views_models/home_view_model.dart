@@ -4,30 +4,20 @@ import '../main.dart';
 import '../models/note.dart';
 
 class HomeVM extends ChangeNotifier {
-  Map<String, Note> noteMap;
-
-  reload() async {
-    noteMap = await db.query();
-    notifyListeners();
+  insert(Note note) async {
+    allNotes[note.id] = note;
+    await db.insert(note);
   }
 
-  switchFav(String id) async {
-    noteMap[id].favorite = !noteMap[id].favorite;
-    update(id);
+  List<Note> get query => allNotes.values.toList();
+
+  update(Note note) async {
+    allNotes[note.id] = note;
+    await db.update(allNotes[note.id]);
   }
 
-  Future<List<Note>> query() async {
-    if (noteMap == null) noteMap = await db.query();
-    return noteMap.values.toList();
-  }
-
-  update(String id) async {
-    await db.update(noteMap[id]);
-    reload();
-  }
-
-  deleteNote(String key) async {
-    await db.delete(key);
-    reload();
+  deleteNote(String id) async {
+    allNotes.remove(id);
+    await db.delete(id);
   }
 }

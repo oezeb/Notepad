@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:notepad/utils/navigator.dart';
+import 'package:notepad/views_models/search_view_model.dart';
 
-import '../main.dart';
 import '../models/note.dart';
-import '../views/editpage.dart';
-import '../views_models/edit_view_model.dart';
 
-class DataSearch extends SearchDelegate<String> {
+class SearchPage extends SearchDelegate<String> {
   final BuildContext context;
+  final SearchVM _searchVM;
 
-  DataSearch(this.context);
+  SearchPage({@required this.context}) : _searchVM = SearchVM();
 
   // Use span to highlight matched element
   _span(String text) {
@@ -77,16 +76,17 @@ class DataSearch extends SearchDelegate<String> {
             children: _spanList(note.text),
           ),
         ),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (BuildContext context) => ChangeNotifierProvider(
-                create: (context) => EditVM(note),
-                child: EditPage(),
-              ),
-            ),
+        onTap: () async {
+          Note res = await AppNavigator.navigateToEditNote(
+            context: context,
+            note: note,
           );
+          if (res == null) {
+            _searchVM.delete(note.id);
+          } else {
+            note = res;
+            _searchVM.update(note);
+          }
         },
       ),
     );
@@ -101,15 +101,12 @@ class DataSearch extends SearchDelegate<String> {
     );
   }
 
-  Future<List<Note>> _result() async {
-    Map<String, Note> map = await db.query();
-    return map.values.where(
-      (note) {
-        final regexp = RegExp(".*" + query + ".*", caseSensitive: false);
-        return regexp.hasMatch(note.title) || regexp.hasMatch(note.text);
-      },
-    ).toList();
-  }
+  List<Note> get _searchResult => _searchVM.query.where(
+        (note) {
+          final regexp = RegExp(".*" + query + ".*", caseSensitive: false);
+          return regexp.hasMatch(note.title) || regexp.hasMatch(note.text);
+        },
+      ).toList();
 
   @override
   List<Widget> buildActions(BuildContext context) {
@@ -136,39 +133,11 @@ class DataSearch extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return FutureBuilder(
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          return _buildList(snapshot.data);
-        } else {
-          return Center(
-            child: Container(
-              margin: EdgeInsets.all(50),
-              child: LinearProgressIndicator(minHeight: 5),
-            ),
-          );
-        }
-      },
-      future: _result(),
-    );
+    return _buildList(_searchResult);
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return FutureBuilder(
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          return _buildList(snapshot.data);
-        } else {
-          return Center(
-            child: Container(
-              margin: EdgeInsets.all(50),
-              child: LinearProgressIndicator(minHeight: 5),
-            ),
-          );
-        }
-      },
-      future: _result(),
-    );
+    return _buildList(_searchResult);
   }
 }

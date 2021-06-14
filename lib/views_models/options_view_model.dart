@@ -1,62 +1,65 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../models/note.dart';
 import '../main.dart';
 
-class OptionsVM extends ChangeNotifier {
-  Set<String> selected; // IDs
-  Map<String, Note> noteMap;
+class OptionsVM {
+  Set<String> _selected; // IDs
+  Map<String, Note> _noteMap;
 
-  OptionsVM({List<Note> notes, List<String> selected})
-      : this.noteMap = {},
-        this.selected = selected.toSet() {
+  OptionsVM({@required List<Note> notes, @required List<String> selected})
+      : _noteMap = {},
+        _selected = selected.toSet() {
     notes.forEach(
       (note) {
-        this.noteMap[note.id] = note;
+        _noteMap[note.id] = note;
       },
     );
   }
 
-  switchSelected(String id) {
-    if (isSelected(id))
-      selected.remove(id);
-    else
-      selected.add(id);
-    notifyListeners();
-  }
-
-  bool isSelected(String id) => selected.contains(id);
-
-  bool isfav() {
-    for (var id in selected) {
-      if (!noteMap[id].favorite) return false;
+  bool get favorite {
+    for (var id in _selected) {
+      if (!_noteMap[id].favorite) return false;
     }
     return true;
   }
 
-  Future<void> switchFav() async {
-    bool fav = isfav();
-    selected.forEach((id) async {
-      noteMap[id].favorite = !fav;
-      await update(id);
-    });
-    notifyListeners();
+  bool isSelected(String id) => _selected.contains(id);
+
+  switchSelected(String id) {
+    if (isSelected(id)) {
+      _selected.remove(id);
+    } else {
+      _selected.add(id);
+    }
   }
 
-  List<Note> get notes => noteMap.values.toList();
+  switchFavorite([String id]) async {
+    if (id == null) {
+      final bool res = favorite;
+      _selected.forEach((id) async {
+        _noteMap[id].favorite = !res;
+        await update(id);
+      });
+    } else {
+      _noteMap[id].favorite = !_noteMap[id].favorite;
+      await update(id);
+    }
+  }
+
+  List<Note> get query => _noteMap.values.toList();
 
   update(String id) async {
-    await db.update(noteMap[id]);
-    notifyListeners();
+    allNotes[id] = _noteMap[id];
+    await db.update(_noteMap[id]);
   }
 
   Future<void> delete() async {
-    selected.forEach((id) async {
-      noteMap.remove(id);
+    _selected.forEach((id) async {
+      _noteMap.remove(id);
+      allNotes.remove(id);
       await db.delete(id);
     });
-    selected = {};
-    notifyListeners();
+    _selected = {};
   }
 }

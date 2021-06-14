@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:notepad/utils/navigator.dart';
+
+import '../utils/navigator.dart';
 
 enum Pages { ALL_NOTES, FAVORITES }
 
@@ -39,7 +40,9 @@ class AppDrawer extends StatelessWidget {
             selected: currPage == Pages.FAVORITES,
             onTap: () async {
               if (currPage != Pages.FAVORITES) {
-                await AppNavigator.navigateToFavorites(context);
+                await AppNavigator.navigateToFavorites(
+                  context,
+                );
               } else {
                 Navigator.pop(context);
               }

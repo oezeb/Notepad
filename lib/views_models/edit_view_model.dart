@@ -5,58 +5,68 @@ import '../models/note.dart';
 import '../main.dart';
 
 class EditVM extends ChangeNotifier {
-  Note _note;
-  bool updated;
+  final TextEditingController titleCtrl;
+  final TextEditingController textCtrl;
+  bool favorite;
+  bool _updated;
+  DateTime _editDate;
+  String _id;
 
   EditVM(Note note)
-      : _note = note,
-        updated = false;
+      : _id = note.id,
+        titleCtrl = TextEditingController(text: note.title),
+        textCtrl = TextEditingController(text: note.text),
+        favorite = note.favorite,
+        _editDate = note.editDate,
+        _updated = false;
 
-  bool isFavorite() => _note.favorite;
+  String get editDate => Date.getString(_editDate);
 
-  String get editDate {
-    return Date.getString(_note.editDate);
+  Note get note => isValid
+      ? Note(
+          id: _id,
+          title: title,
+          text: text,
+          favorite: favorite,
+          editDate: _editDate,
+        )
+      : null;
+
+  String get title => titleCtrl.text;
+
+  String get text => textCtrl.text;
+
+  bool get isValid => title != '' || text != '';
+
+  set title(String title) {
+    titleCtrl.text = title;
+    update();
   }
 
-  get title => _note.title;
-
-  get text => _note.text;
-
-  switchFav() async {
-    _note.favorite = !_note.favorite;
-    await db.update(_note);
-    notifyListeners();
-  }
-
-  setTitle(String title) async {
-    _note.title = title;
-    await update();
-  }
-
-  setText(String text) async {
-    _note.text = text;
-    await update();
+  set text(String text) {
+    textCtrl.text = text;
+    update();
   }
 
   update() async {
     // delete from database if empty note
-    if (_note.title == '' && _note.text == '') {
-      await db.delete(_note.id);
+    if (!isValid) {
+      await delete();
       return;
     }
     // update data
-    if (updated == false) {
-      _note.editDate = DateTime.now();
-      updated = true;
+    if (_updated == false) {
+      _editDate = DateTime.now();
+      _updated = true;
     }
-    int num = await db.update(_note);
+    int num = await db.update(note);
     // num == 0 means note doesn't exist in the database
     if (num == 0) {
-      await db.insert(_note);
+      _id = await db.insert(note);
     }
   }
 
   delete() async {
-    await db.delete(_note.id);
+    await db.delete(_id);
   }
 }
