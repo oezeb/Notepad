@@ -1,7 +1,12 @@
 # notepad
 
-Home Page
+| Home Page | longPress on a Note to see options | Edit Note |
+| --- | --- | --- |
+| ![home page](assets/images/home.png) | ![options](assets/images/home_options.png) | ![edit page](assets/images/edit.png) |
+| Sidebar Design | Search | |
+| ![side bar](assets/images/sidebar.png) | ![search page](assets/images/search.png) | |
 
+<!-- 
 ![home page](assets/images/home.png)
 
 longPress on a Note to see options
@@ -18,4 +23,4 @@ Sidebar Design
 
 Search
 
-![search page](assets/images/search.png)
+![search page](assets/images/search.png) -->
